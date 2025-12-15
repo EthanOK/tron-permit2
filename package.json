@@ -5,7 +5,8 @@
   "scripts": {
     "compile": "tronbox compile",
     "test": "tronbox test",
-    "migrate": "tronbox migrate"
+    "migrate": "tronbox migrate",
+    "deploy nile": "tronbox migrate --network nile"
   },
   "keywords": [
     "tron",
@@ -22,5 +23,8 @@
   "dependencies": {
     "@openzeppelin/contracts": "5.5.0",
     "picocolors": "1.1.1"
+  },
+  "devDependencies": {
+    "dotenv": "^17.2.3"
   }
 }
