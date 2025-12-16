@@ -1,54 +1,54 @@
 const wait = require("./helpers/wait");
 const pc = require("picocolors");
 const ChainID = artifacts.require("./ChainIdExample.sol");
-const RMBToken = artifacts.require("./RMBToken.sol");
+const MockTokens = artifacts.require("./MockTokens.sol");
+const MockToken = artifacts.require("./MockToken.sol");
 const Permit2Tron = artifacts.require("./Permit2Tron.sol");
 // The following tests require TronBox >= 4.1.x
 // and TronBox Runtime Environment (https://hub.docker.com/r/tronbox/tre)
 
 contract("Permit2 Tron", function (accounts) {
-  let rmbTokenInstance;
+  let mockTokensInstance;
+  let mockToken1Instance;
+  let mockToken2Instance;
   let permit2Instance;
   let chainIdInstance;
+  let tokens;
+
+  const owner = tronWeb.address.fromHex(accounts[0]);
+  const spender = tronWeb.address.fromHex(accounts[1]);
+  const receiver = tronWeb.address.fromHex(accounts[2]);
 
   before(async function () {
-    rmbTokenInstance = await RMBToken.deployed();
+    mockTokensInstance = await MockTokens.deployed();
+    tokens = await mockTokensInstance.getDeployedTokens();
+    mockToken1Instance = await MockToken.at(tokens[0]);
+    mockToken2Instance = await MockToken.at(tokens[1]);
     permit2Instance = await Permit2Tron.deployed();
     chainIdInstance = await ChainID.deployed();
-    console.log(
-      "RMBToken Address:",
-      tronWeb.address.fromHex(rmbTokenInstance.address)
-    );
-    console.log(
-      "Permit2Tron Address:",
-      tronWeb.address.fromHex(permit2Instance.address)
-    );
   });
 
-  it("should verify that the allowance is 1e18", async function () {
-    const owner = accounts[0];
-    const spender = permit2Instance.address;
-
-    await rmbTokenInstance.approve(spender, BigInt(1e18), {
+  it("should tokens approve to permit2", async function () {
+    await mockToken1Instance.approve(permit2Instance.address, BigInt(1e18), {
       from: owner,
     });
-
-    const allowance = await rmbTokenInstance.allowance(owner, spender);
-    assert.equal(allowance, 1e18, "Allowance is not 1e18.");
+    await mockToken2Instance.approve(permit2Instance.address, BigInt(1e18), {
+      from: owner,
+    });
   });
 
-  it("should permit a single token and transfer it", async function () {
-    const owner = tronWeb.address.fromHex(accounts[0]);
-    const spender = tronWeb.address.fromHex(accounts[1]);
-    const receiver = tronWeb.address.fromHex(accounts[2]);
+  let value_permit;
+  let signature;
 
+  it("should signTypedData and verify it", async function () {
     const permitAmount = 1000 * 1e6;
 
     // get chain id from chainIdExample contract
     const [chainIdBytes32, chainId] = await chainIdInstance.getChainId();
 
     const permit2Address = tronWeb.address.fromHex(permit2Instance.address);
-    const tokenAddress = tronWeb.address.fromHex(rmbTokenInstance.address);
+    const token1Address = tronWeb.address.fromHex(mockToken1Instance.address);
+    const token2Address = tronWeb.address.fromHex(mockToken2Instance.address);
 
     const domain = {
       name: "Permit2",
@@ -58,8 +58,8 @@ contract("Permit2 Tron", function (accounts) {
 
     // The named list of all type definitions
     const types = {
-      PermitSingle: [
-        { name: "details", type: "PermitDetails" },
+      PermitBatch: [
+        { name: "details", type: "PermitDetails[]" },
         { name: "spender", type: "address" },
         { name: "sigDeadline", type: "uint256" },
       ],
@@ -75,43 +75,64 @@ contract("Permit2 Tron", function (accounts) {
 
     const allowance = await permit2Instance.allowance(
       owner,
-      tokenAddress,
+      token1Address,
       spender
     );
-
-    const value_permit = {
-      details: {
-        token: tokenAddress,
-        amount: permitAmount,
-        expiration: timestamp + 30 * 24 * 60 * 60,
-        nonce: allowance.nonce,
-      },
+    const allowance2 = await permit2Instance.allowance(
+      owner,
+      token2Address,
+      spender
+    );
+    value_permit = {
+      details: [
+        {
+          token: token1Address,
+          amount: permitAmount,
+          expiration: timestamp + 30 * 24 * 60 * 60,
+          nonce: allowance.nonce,
+        },
+        {
+          token: token2Address,
+          amount: permitAmount,
+          expiration: timestamp + 30 * 24 * 60 * 60,
+          nonce: BigInt(allowance2.nonce),
+        },
+      ],
       spender: spender,
       sigDeadline: timestamp + 600,
     };
 
-    const signature = await tronWeb.trx.signTypedData(
+    signature = await tronWeb.trx.signTypedData(domain, types, value_permit);
+
+    const verified = await tronWeb.trx.verifyTypedData(
       domain,
       types,
-      value_permit
+      value_permit,
+      signature,
+      owner
     );
+    assert.isTrue(verified, "Invalid Signature.");
+  });
 
-    const permitSingle = [
-      [
-        value_permit.details.token,
-        value_permit.details.amount,
-        value_permit.details.expiration,
-        value_permit.details.nonce,
-      ],
+  it("should permit a single token and transfer it", async function () {
+    const permitAmount = 1000 * 1e6;
+    const token1Address = tronWeb.address.fromHex(mockToken1Instance.address);
+    const token2Address = tronWeb.address.fromHex(mockToken2Instance.address);
+
+    const permitBatch = [
+      value_permit.details.map((d) => [
+        d.token,
+        d.amount,
+        d.expiration,
+        d.nonce,
+      ]),
       value_permit.spender,
       value_permit.sigDeadline,
     ];
 
-    const permitTx = await permit2Instance.permitSingle(
-      owner,
-      permitSingle,
-      signature
-    );
+    const permitTx = await permit2Instance[
+      "permit(address,((address,uint160,uint48,uint48)[],address,uint256),bytes)"
+    ](owner, permitBatch, signature);
     await waitForTransactionReceipt(permitTx);
     const permitTxInfo = await tronWeb.trx.getTransactionInfo(permitTx);
     assert.equal(
@@ -122,7 +143,7 @@ contract("Permit2 Tron", function (accounts) {
 
     const newAllowance = await permit2Instance.allowance(
       owner,
-      tokenAddress,
+      token1Address,
       spender
     );
 
@@ -132,22 +153,27 @@ contract("Permit2 Tron", function (accounts) {
       "Allowance is not the expected amount."
     );
 
-    // send the tokens to the spender
+    const transferDetails = [
+      [owner, receiver, permitAmount / 100, token1Address],
+      [owner, receiver, permitAmount / 100, token2Address],
+    ];
 
-    const transferTx = await permit2Instance.transferFrom(
-      owner,
-      receiver,
-      permitAmount,
-      tokenAddress,
-      { from: spender }
-    );
+    // send the tokens to the spende
+    const transferTx = await permit2Instance[
+      "transferFrom((address,address,uint160,address)[])"
+    ](transferDetails, { from: spender });
     await waitForTransactionReceipt(transferTx);
     const transferTxInfo = await tronWeb.trx.getTransactionInfo(transferTx);
-    console.log("Transfer Tx Info:", transferTxInfo);
     assert.equal(
       transferTxInfo.receipt.result,
       "SUCCESS",
       "Transfer transaction was not successful."
+    );
+    const balance = await mockToken1Instance.balanceOf(receiver);
+    assert.equal(
+      balance,
+      permitAmount / 100,
+      "Balance is not the expected amount."
     );
   });
 });

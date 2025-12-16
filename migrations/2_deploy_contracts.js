@@ -1,11 +1,12 @@
 const ConvertLib = artifacts.require("./ConvertLib.sol");
 const MetaCoin = artifacts.require("./MetaCoin.sol");
 const RMBToken = artifacts.require("./RMBToken.sol");
+const MockTokens = artifacts.require("./MockTokens.sol");
 
 module.exports = async function (deployer, network) {
   if (network == "nile") {
     console.log("Deploying RMBToken on Nile network");
-    
+
     await deployer.deploy(RMBToken);
     const rmbTokenInstance = await RMBToken.deployed();
 
@@ -25,6 +26,7 @@ module.exports = async function (deployer, network) {
   await deployer.link(ConvertLib, MetaCoin);
   await deployer.deploy(MetaCoin, 10000);
   await deployer.deploy(RMBToken);
+  await deployer.deploy(MockTokens);
 
   if (network === "development" && typeof web3 === "undefined") {
     // This code block is executed only when the network is 'development' as defined in tronbox-config.js
@@ -50,5 +52,8 @@ module.exports = async function (deployer, network) {
         balance
       )} ${symbol}`
     );
+
+    const mockTokensInstance = await MockTokens.deployed();
+    await mockTokensInstance.deployMockToken(5, owner);
   }
 };
