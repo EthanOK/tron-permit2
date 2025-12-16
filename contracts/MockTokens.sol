@@ -4,14 +4,19 @@ pragma solidity ^0.8.20;
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-contract MockTokens {
+contract MockTokens is Ownable {
     address[] public tokens;
+
+    constructor(address initialOwner) Ownable(initialOwner) {}
 
     function getDeployedTokens() public view returns (address[] memory) {
         return tokens;
     }
 
-    function deployMockToken(uint256 number, address initialOwner) public {
+    function deployMockToken(
+        uint256 number,
+        address initialOwner
+    ) public onlyOwner {
         for (uint256 i = 0; i < number; i++) {
             MockToken token = new MockToken(initialOwner);
             tokens.push(address(token));

@@ -1,12 +1,12 @@
 {
-  "name": "metacoin",
+  "name": "tron-permit2",
   "version": "3.0.0",
-  "description": "MetaCoin smart contract example for Tronbox",
+  "description": "Tron permit2 smart contract for Tronbox",
   "scripts": {
     "compile": "tronbox compile",
     "test": "tronbox test",
     "migrate": "tronbox migrate",
-    "deploy nile": "tronbox migrate --network nile"
+    "deploy nile": "source .env && tronbox migrate --network nile"
   },
   "keywords": [
     "tron",
@@ -14,18 +14,14 @@
     "contracts",
     "solidity"
   ],
-  "originalAuthors": "truffle-box",
   "author": {
-    "name": "Francesco Sullo",
-    "email": "francesco@sullo.co"
+    "name": "0xEthan"
   },
   "license": "MIT",
   "dependencies": {
     "@alexroan/permit2-tron": "^0.0.5",
     "@openzeppelin/contracts": "5.5.0",
     "picocolors": "1.1.1"
-  },
-  "devDependencies": {
-    "@dotenvx/dotenvx": "^1.51.2"
   }
+ 
 }

@@ -1,5 +1,3 @@
-require('@dotenvx/dotenvx').config()
-
 module.exports = {
   networks: {
     mainnet: {
@@ -54,7 +52,7 @@ module.exports = {
       settings: {
         optimizer: {
           enabled: true,
-          runs: 200,
+          runs: 99999,
         },
         // evmVersion: 'istanbul',
         viaIR: true,
