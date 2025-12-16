@@ -10,6 +10,7 @@ contract("MetaCoin", function (accounts) {
 
   before(async function () {
     metaCoinInstance = await MetaCoin.deployed();
+    console.log("contract:", tronWeb.address.fromHex(metaCoinInstance.address));
   });
 
   it("should verify that there are at least two available accounts", async function () {
@@ -33,8 +34,6 @@ contract("MetaCoin", function (accounts) {
       tronWeb.address.toHex(accounts[0]),
       "Contract was not deployed by the owner."
     );
-    console.log("contract:", tronWeb.address.fromHex(metaCoinInstance.address));
-    console.log("owner:", tronWeb.address.fromHex(owner.ownerAddress));
   });
 
   it("should put 10000 MetaCoin in the first account", async function () {

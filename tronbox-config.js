@@ -1,4 +1,4 @@
-require("dotenv").config();
+require('@dotenvx/dotenvx').config()
 
 module.exports = {
   networks: {
@@ -57,7 +57,7 @@ module.exports = {
           runs: 200,
         },
         // evmVersion: 'istanbul',
-        // viaIR: true,
+        viaIR: true,
       },
     },
   },

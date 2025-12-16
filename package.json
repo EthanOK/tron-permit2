@@ -21,10 +21,11 @@
   },
   "license": "MIT",
   "dependencies": {
+    "@alexroan/permit2-tron": "^0.0.5",
     "@openzeppelin/contracts": "5.5.0",
     "picocolors": "1.1.1"
   },
   "devDependencies": {
-    "dotenv": "^17.2.3"
+    "@dotenvx/dotenvx": "^1.51.2"
   }
 }
