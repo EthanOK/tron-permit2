@@ -1,0 +1,59 @@
+name: Test
+
+on:
+  push:
+    branches: [ master, dev ]
+  pull_request:
+    branches: [ master, dev ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Start TronBox Runtime Environment
+      run: |
+        docker run -d -p 9090:9090 --name tron tronbox/tre
+        echo "等待 Tron 节点启动..."
+        # 等待 Tron 节点启动（最多等待 60 秒）
+        for i in {1..30}; do
+          if curl -s http://127.0.0.1:9090/wallet/getnowblock > /dev/null 2>&1; then
+            echo "✓ Tron 节点已就绪"
+            break
+          fi
+          if [ $i -eq 30 ]; then
+            echo "✗ Tron 节点启动超时"
+            docker logs tron
+            exit 1
+          fi
+          echo "等待中... ($i/30)"
+          sleep 2
+        done
+
+    - name: Compile contracts
+      run: npm run compile
+
+    - name: Run migrations
+      run: tronbox migrate --network development
+
+    - name: Run tests
+      run: tronbox test --network development
+
+    - name: Cleanup
+      if: always()
+      run: |
+        docker stop tron || true
+        docker rm tron || true
+

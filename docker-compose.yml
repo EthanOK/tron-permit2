@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  tron:
+    image: tronbox/tre
+    container_name: tron
+    ports:
+      - "9090:9090"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:9090/wallet/getnowblock"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+

@@ -1,6 +1,6 @@
-# MetaCoin TronBox Project
+# Permit2 TronBox Project
 
-This is a MetaCoin TronBox project.
+This is a Permit2 TronBox project.
 
 ## Configuration
 
@@ -56,6 +56,18 @@ tronbox migrate --network nile
 The TronBox Runtime Environment provides a complete development framework for Tron, including a private network for testing.
 
 Get tronbox/tre docker image at https://hub.docker.com/r/tronbox/tre
+
+#### Start Docker Service
+
+```
+docker-compose up -d
+```
+
+#### Stop Docker Service
+
+```
+docker-compose down
+```
 
 To deploy your contracts to Localnet, you can run the following:
 

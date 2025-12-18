@@ -6,7 +6,7 @@
     "compile": "tronbox compile",
     "test": "tronbox test",
     "migrate": "tronbox migrate",
-    "deploy nile": "source .env && tronbox migrate --network nile"
+    "migrate:nile": "source .env && tronbox migrate --network nile"
   },
   "keywords": [
     "tron",
@@ -22,6 +22,9 @@
     "@alexroan/permit2-tron": "^0.0.5",
     "@openzeppelin/contracts": "5.5.0",
     "picocolors": "1.1.1"
+  },
+  "devDependencies": {
+    "tronbox": "^4.4.0",
+    "tronweb": "^6.1.1"
   }
- 
 }
