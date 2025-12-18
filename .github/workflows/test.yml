@@ -8,7 +8,7 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
 
     steps:
     - name: Checkout code
@@ -46,10 +46,10 @@ jobs:
       run: npm run compile
 
     - name: Run migrations
-      run: tronbox migrate --network development
+      run: npm run migrate
 
     - name: Run tests
-      run: tronbox test --network development
+      run: npm run test
 
     - name: Cleanup
       if: always()
